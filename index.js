@@ -34,6 +34,15 @@ async function run() {
             const products = await productsCollection.findOne(query);
             res.send(products);
         });
+
+        // post collection api
+        app.get('/products', async (req, res) => {
+            const email = req.query.email;
+            const query = { email: email };
+            const cursor = productsCollection.find(query);
+            const products = await cursor.toArray();
+            res.send(products);
+        });
         //POST 
         app.post('/products', async (req, res) => {
             const newProducts = req.body;
