@@ -12,6 +12,21 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+function veriguJWt(req, res, next) {
+    const authHedar = req.headers.authorization;
+    if (!authHedar) {
+        return res.status(401).send({ message: 'unauthorizd access' })
+    }
+    const token = authHedar.split(' ')[1];
+    jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decode) => {
+        if (err) {
+            return res.status(403).send({ message: 'Forbidden access' })
+        }
+        req.decode = decode;
+    })
+
+    next();
+}
 
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.c9swh.mongodb.net/myFirstDatabase?retryWrites=true&w=majority`;
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
@@ -55,7 +70,7 @@ async function run() {
             const products = await cursor.toArray();
             res.send(products);
         });
-        app.get('/products/:id', async (req, res) => {
+        app.get('/products/:id', veriguJWt, async (req, res) => {
             const id = req.params.id;
             const query = { _id: ObjectId(id) };
             const products = await productsCollection.findOne(query);
@@ -68,6 +83,19 @@ async function run() {
             const result = await productsCollection.insertOne(newProducts);
             res.send(result)
         })
+
+        // // auth 
+        // app.get('/products', async (req, res) => {
+        //    
+        //     const email = req;
+        //     console.log(email);
+        //     const query = {};
+        //     const cursor = productsCollection.find(query);
+        //     const myItem = await cursor.toArray();
+        //     res.send(myItem);
+        // })
+
+
         // delete
 
         app.delete('/products/:id', async (req, res) => {
