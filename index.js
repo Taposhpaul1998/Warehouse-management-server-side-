@@ -1,5 +1,6 @@
 const express = require('express');
 const cors = require('cors');
+const jwt = require('jsonwebtoken');
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 require('dotenv').config();
 const port = process.env.PORT || 5000;
@@ -22,6 +23,15 @@ async function run() {
         const pricingCollection = client.db('Cyclehouse').collection('pricing');
         const categoryCollection = client.db('Cyclehouse').collection('category');
 
+        //auth
+        app.post('/singin', async (req, res) => {
+            const user = req.body;
+            const accessToken = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, {
+                expiresIn: '1d'
+            });
+            res.send({ accessToken });
+        })
+
         // category 
         app.get('/category', async (req, res) => {
             const query = {};
@@ -35,7 +45,7 @@ async function run() {
             const query = {};
             const cursor = pricingCollection.find(query);
             const pricing = await cursor.toArray();
-            res.send(products);
+            res.send(pricing);
         });
 
         // server api 
@@ -52,14 +62,6 @@ async function run() {
             res.send(products);
         });
 
-        // post collection api
-        app.get('/products', async (req, res) => {
-            const email = req.query.email;
-            const query = { email: email };
-            const cursor = productsCollection.find(query);
-            const products = await cursor.toArray();
-            res.send(products);
-        });
         //POST 
         app.post('/products', async (req, res) => {
             const newProducts = req.body;
